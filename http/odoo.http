@@ -1,0 +1,44 @@
+POST http://localhost:8069/jsonrpc
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "call",
+  "id": 42,
+  "params": {
+    "service": "object",
+    "method": "execute_kw",
+    "args": [
+      "infra",
+      "2",
+      "admin",
+      "res.partner",
+      "search_read",
+      [
+        [["id", ">", "30"]],
+        ["name"]
+      ]
+    ]
+  }
+}
+
+###
+
+POST http://localhost:8069/jsonrpc
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "call",
+  "id": 42,
+  "params": {
+    "service": "common",
+    "method": "authenticate",
+    "args": [
+      "infra",
+      "admin",
+      "admin",
+      ""
+    ]
+  }
+}
