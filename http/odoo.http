@@ -42,3 +42,18 @@ Content-Type: application/json
     ]
   }
 }
+
+###
+
+POST https://demo.odoo.com/start
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "call",
+  "id": 42,
+  "params": {
+    "service": "common",
+    "method": "start"
+  }
+}
