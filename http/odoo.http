@@ -75,10 +75,10 @@ Content-Type: application/json
       "2",
       "admin",
       "res.partner",
-      "read",
+      "search_read",
       [
-        [2],
-        ["id"]
+        [["id", ">", 2]],
+        ["name"]
       ]
     ]
   }
