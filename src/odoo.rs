@@ -11,7 +11,6 @@ pub struct Odoo {
     password: Option<String>,
 }
 
-
 impl Odoo {
     pub fn new(host: &str, database: &str) -> Odoo {
         Odoo {
@@ -49,6 +48,21 @@ impl Odoo {
         Ok(response.result)
     }
 
+    pub fn call<T: Serialize, U: DeserializeOwned>(&self, model: &str, method: &str, args: T) -> Result<Response<U>, Error> {
+        let password = self.password.as_ref().unwrap().as_str();
+
+        let request = Request::new("object", None, (
+            self.database.as_str(),
+            self.uid,
+            password,
+            model,
+            method,
+            args
+        ));
+
+        self.send(&request, None).map_err(|e| Error(e.to_string()))
+    }
+
     fn send<T: Serialize, U: DeserializeOwned>(&self, request: &Request<T>, url: Option<&str>) -> Result<Response<U>, reqwest::Error> {
         let client = reqwest::blocking::Client::new();
         let url = format!("{}/{}", self.host, url.unwrap_or("jsonrpc"));
@@ -61,7 +75,10 @@ impl Odoo {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use serde_json::Value;
     use crate::odoo::Odoo;
+    use crate::api::Response;
 
     fn get_odoo() -> Odoo {
         let odoo = Odoo::new("https://demo.odoo.com", "");
@@ -95,7 +112,7 @@ mod tests {
     fn test_login_failed() {
         let mut odoo = Odoo::new(
             "https://demo.odoo.com",
-            "fake"
+            "fake",
         );
         let resp = odoo.login("admin", "admin");
         assert_eq!(resp.is_err(), true);
@@ -107,8 +124,30 @@ mod tests {
             "https://demo.odoo.com",
             "fake",
             "admin",
-            "admin"
+            "admin",
         );
         assert_eq!(odoo.is_err(), true);
+    }
+
+    #[test]
+    fn test_search() {
+        let odoo = get_odoo();
+        let partners: Response<Vec<u32>> = odoo.call("res.partner", "search", [[["id", ">", "2"]]]).unwrap();
+        assert_ne!(partners.result.len(), 0);
+    }
+
+    #[test]
+    fn test_read() {
+        let odoo = get_odoo();
+        let partners: Response<Vec<HashMap<String, Value>>> = odoo.call("res.partner", "read", ([2], ["name"])).unwrap();
+        assert_eq!(partners.result.len(), 1);
+        assert_eq!(partners.result.get(0).unwrap().get("id").unwrap(), 2);
+    }
+
+    #[test]
+    fn test_search_read() {
+        let odoo = get_odoo();
+        let partners: Response<Vec<HashMap<String, Value>>> = odoo.call("res.partner", "search_read", ([("id", ">", 2)], ["name"])).unwrap();
+        assert_ne!(partners.result.len(), 0);
     }
 }
