@@ -55,8 +55,7 @@ impl Odoo {
         let resp = client.post(&url)
             .json(&request)
             .send()?;
-        let response: Response<U> = resp.json()?;
-        Ok(response)
+        Ok(resp.json()?)
     }
 }
 
@@ -90,5 +89,26 @@ mod tests {
     fn test_login() {
         let odoo = get_odoo();
         assert_ne!(odoo.uid.unwrap(), 0);
+    }
+
+    #[test]
+    fn test_login_failed() {
+        let mut odoo = Odoo::new(
+            "https://demo.odoo.com",
+            "fake"
+        );
+        let resp = odoo.login("admin", "admin");
+        assert_eq!(resp.is_err(), true);
+    }
+
+    #[test]
+    fn test_new_and_login_failed() {
+        let odoo = Odoo::new_and_login(
+            "https://demo.odoo.com",
+            "fake",
+            "admin",
+            "admin"
+        );
+        assert_eq!(odoo.is_err(), true);
     }
 }
