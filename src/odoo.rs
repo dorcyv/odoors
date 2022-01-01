@@ -102,7 +102,7 @@ impl Odoo {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use serde_json::Value;
+    use serde_json::{Map, Value};
     use crate::odoo::Odoo;
     use crate::api::Response;
 
@@ -172,7 +172,6 @@ mod tests {
 
     #[test]
     fn test_search_read() {
-        //let odoo = get_odoo();
         let odoo = get_odoo();
         let partners: Response<Vec<Value>> = odoo.search_read(
             "res.partner",
@@ -195,5 +194,17 @@ mod tests {
             None,
         ).unwrap();
         assert_eq!(partners.result.len(), 5);
+    }
+
+    #[test]
+    fn test_create_and_write() {
+        let odoo = get_odoo();
+        let mut values = Map::new();
+        values.insert("name".to_string(), Value::from("Test"));
+        let result :Response<u32> = odoo.call("res.partner", "create", vec![&values]).unwrap();
+        let id = result.result;
+        assert_ne!(id, 0);
+        let result :Response<bool> = odoo.call("res.partner", "write", (vec![id], &values)).unwrap();
+        assert_eq!(result.result, true);
     }
 }
