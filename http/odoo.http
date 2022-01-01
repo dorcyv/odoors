@@ -83,3 +83,32 @@ Content-Type: application/json
     ]
   }
 }
+
+###
+
+POST https://demo3.odoo.com/jsonrpc
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "call",
+  "id": 42,
+  "params": {
+    "service": "object",
+    "method": "execute_kw",
+    "args": [
+      "demo_150_1641038508",
+      "2",
+      "admin",
+      "res.partner",
+      "search_read",
+      [
+        [["id", ">", 2]]
+      ],
+      {
+        "fields": ["name"],
+        "limit": 5
+      }
+    ]
+  }
+}

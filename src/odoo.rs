@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use serde::de::DeserializeOwned;
 use serde::{Serialize};
+use serde_json::{Map, Number, Value};
 use crate::error::Error;
 use crate::api::{Request, Response};
 
@@ -58,6 +59,31 @@ impl Odoo {
             model,
             method,
             args
+        ));
+
+        self.send(&request, None).map_err(|e| Error(e.to_string()))
+    }
+
+    pub fn search_read<T: Serialize, U: DeserializeOwned>(&self, model: &str, domain: T, fields: Vec<&str>, limit: Option<u32>, offset: Option<u32>) -> Result<Response<U>, Error> {
+        let password = self.password.as_ref().unwrap().as_str();
+
+        let mut values = Map::new();
+        values.insert("fields".to_string(), Value::Array(fields.iter().map(|f| Value::String(f.to_string())).collect()));
+        if limit.is_some() {
+            values.insert("limit".to_string(), Value::Number(Number::from(limit.unwrap())));
+        }
+        if offset.is_some() {
+            values.insert("offset".to_string(), Value::Number(Number::from(offset.unwrap())));
+        }
+
+        let request = Request::new("object", None, (
+            self.database.as_str(),
+            self.uid,
+            password,
+            model,
+            "search_read",
+            vec![domain],
+            values
         ));
 
         self.send(&request, None).map_err(|e| Error(e.to_string()))
@@ -146,8 +172,28 @@ mod tests {
 
     #[test]
     fn test_search_read() {
+        //let odoo = get_odoo();
         let odoo = get_odoo();
-        let partners: Response<Vec<HashMap<String, Value>>> = odoo.call("res.partner", "search_read", ([("id", ">", 2)], ["name"])).unwrap();
+        let partners: Response<Vec<Value>> = odoo.search_read(
+            "res.partner",
+            (("id", ">", 2), ),
+            vec!["name"],
+            None,
+            None,
+        ).unwrap();
         assert_ne!(partners.result.len(), 0);
+        for partner in partners.result {
+            let p = partner.as_object().unwrap();
+            assert_ne!(p.get("id").unwrap().as_i64().unwrap(), 0);
+        }
+
+        let partners: Response<Vec<Value>> = odoo.search_read(
+            "res.partner",
+            (("id", ">", 0), ),
+            vec!["name"],
+            Some(5),
+            None,
+        ).unwrap();
+        assert_eq!(partners.result.len(), 5);
     }
 }
