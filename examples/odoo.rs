@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use serde_json::Value;
 use odoo::api::Response;
 use odoo::odoo::Odoo;
@@ -8,17 +7,18 @@ fn main() {
         "http://localhost:8069",
         "infra",
         "admin",
-        "admin"
+        "admin",
     ).unwrap();
-    let partners: Response<Vec<HashMap<String, Value>>> = odoo.call(
+    let partners: Response<Vec<Value>> = odoo.search_read(
         "res.partner",
-        "search_read",
-        (
-            [("id", ">", 2)],
-            ["name", "parent_id"]
-        )
+        (("name", "ilike", "a"),),
+        vec!["name", "email"],
+        Some(5),
+        None,
     ).unwrap();
+
     for partner in partners.result {
+        let partner = partner.as_object().unwrap();
         println!("{}", partner.get("name").unwrap())
     }
 }
