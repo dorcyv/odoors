@@ -1,6 +1,6 @@
 use serde_json::Value;
-use odoo::api::Response;
-use odoo::odoo::Odoo;
+use odoors::api::Response;
+use odoors::odoo::Odoo;
 
 fn main() {
     let odoo = Odoo::new_and_login(
