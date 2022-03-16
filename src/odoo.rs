@@ -64,8 +64,9 @@ impl Odoo {
         self.send(&request, None).map_err(|e| Error(e.to_string()))
     }
 
-    pub fn search_read<T: Serialize, U: DeserializeOwned>(&self, model: &str, domain: T, fields: Vec<&str>, limit: Option<u32>, offset: Option<u32>) -> Result<Response<U>, Error> {
+    pub fn search_read<T: Serialize, U: DeserializeOwned>(&self, model: &str, domain: T, fields: Option<Vec<&str>>, limit: Option<u32>, offset: Option<u32>) -> Result<Response<U>, Error> {
         let password = self.password.as_ref().unwrap().as_str();
+        let fields = fields.unwrap_or(vec![]);
 
         let mut values = Map::new();
         values.insert("fields".to_string(), Value::Array(fields.iter().map(|f| Value::String(f.to_string())).collect()));
@@ -177,7 +178,7 @@ mod tests {
         let partners: Response<Vec<Value>> = odoo.search_read(
             "res.partner",
             (("id", ">", 2), ),
-            vec!["name"],
+            Some(vec!["name"]),
             None,
             None,
         ).unwrap();
@@ -190,7 +191,7 @@ mod tests {
         let partners: Response<Vec<Value>> = odoo.search_read(
             "res.partner",
             (("id", ">", 0), ),
-            vec!["name"],
+            Some(vec!["name"]),
             Some(5),
             None,
         ).unwrap();
@@ -222,7 +223,7 @@ mod tests {
         let partners: Response<Vec<Partner>> = odoo.search_read(
             "res.partner",
             (("id", ">", 2), ),
-            vec!["name"],
+            None,
             Some(5),
             None,
         ).unwrap();

@@ -12,7 +12,7 @@ fn main() {
     let partners: Response<Vec<Value>> = odoo.search_read(
         "res.partner",
         (("name", "ilike", "a"),),
-        vec!["name", "email"],
+        Some(vec!["name", "email"]),
         Some(5),
         None,
     ).unwrap();
