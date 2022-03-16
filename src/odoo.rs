@@ -103,6 +103,7 @@ impl Odoo {
 mod tests {
     use std::collections::HashMap;
     use serde_json::{Map, Value};
+    use serde::Deserialize;
     use crate::odoo::Odoo;
     use crate::api::Response;
 
@@ -206,5 +207,30 @@ mod tests {
         assert_ne!(id, 0);
         let result :Response<bool> = odoo.call("res.partner", "write", (vec![id], &values)).unwrap();
         assert_eq!(result.result, true);
+    }
+
+    #[derive(Deserialize)]
+    struct Partner {
+        id: u32,
+        name: String,
+    }
+
+    #[test]
+    fn test_search_read_serde() {
+        let odoo = get_odoo();
+
+        let partners: Response<Vec<Partner>> = odoo.search_read(
+            "res.partner",
+            (("id", ">", 2), ),
+            vec!["name"],
+            Some(5),
+            None,
+        ).unwrap();
+        let partners = partners.result;
+        assert_eq!(partners.len(), 5);
+        for partner in partners {
+            assert_ne!(partner.id, 0);
+            assert_ne!(partner.name.len(), 0);
+        }
     }
 }
