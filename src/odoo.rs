@@ -1,9 +1,24 @@
 use std::collections::HashMap;
+
+use serde::{Deserialize, Deserializer, Serialize};
 use serde::de::DeserializeOwned;
-use serde::{Serialize};
 use serde_json::{Map, Number, Value};
-use crate::error::Error;
+
 use crate::api::{Request, Response};
+use crate::error::Error;
+
+pub fn deserialize_odoo_nullable<'de, D, E>(data: D) -> Result<Option<E>, D::Error>
+    where
+        D: Deserializer<'de>,
+        E: Deserialize<'de>,
+{
+    let b = Deserialize::deserialize(data);
+
+    match b {
+        Ok(e) => Ok(Some(e)),
+        Err(_) => Ok(None),
+    }
+}
 
 pub struct Odoo {
     host: String,
@@ -103,10 +118,12 @@ impl Odoo {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use serde_json::{Map, Value};
+
     use serde::Deserialize;
-    use crate::odoo::Odoo;
+    use serde_json::{Map, Value};
+
     use crate::api::Response;
+    use crate::odoo::{Odoo, deserialize_odoo_nullable};
 
     fn get_odoo() -> Odoo {
         let odoo = Odoo::new("https://demo.odoo.com", "");
@@ -203,10 +220,10 @@ mod tests {
         let odoo = get_odoo();
         let mut values = Map::new();
         values.insert("name".to_string(), Value::from("Test"));
-        let result :Response<u32> = odoo.call("res.partner", "create", vec![&values]).unwrap();
+        let result: Response<u32> = odoo.call("res.partner", "create", vec![&values]).unwrap();
         let id = result.result;
         assert_ne!(id, 0);
-        let result :Response<bool> = odoo.call("res.partner", "write", (vec![id], &values)).unwrap();
+        let result: Response<bool> = odoo.call("res.partner", "write", (vec![id], &values)).unwrap();
         assert_eq!(result.result, true);
     }
 
@@ -232,6 +249,34 @@ mod tests {
         for partner in partners {
             assert_ne!(partner.id, 0);
             assert_ne!(partner.name.len(), 0);
+        }
+    }
+
+    #[derive(Deserialize)]
+    struct ProductTemplate {
+        pub id: u32,
+        pub name: String,
+        #[serde(deserialize_with = "deserialize_odoo_nullable")]
+        pub default_code: Option<String>,
+    }
+
+    #[test]
+    fn test_search_read_serde_nullable() {
+        let odoo = get_odoo();
+
+        let products: Response<Vec<ProductTemplate>> = odoo.search_read(
+            "product.template",
+            (("default_code", "=", false),),
+            Some(vec!["name", "default_code"]),
+            Some(5),
+            None,
+        ).unwrap();
+        let products = products.result;
+        assert_eq!(products.len(), 5);
+        for product in products {
+            assert_ne!(product.id, 0);
+            assert_ne!(product.name.len(), 0);
+            assert_eq!(product.default_code, None);
         }
     }
 }
