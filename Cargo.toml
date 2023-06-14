@@ -4,7 +4,7 @@ authors = ["Valerian DORCY <valerian.dorcy@gmail.com>"]
 description = "Odoo library"
 repository = "https://github.com/dorcyv/odoors"
 license = "MIT"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 exclude = [
     "http/*",
