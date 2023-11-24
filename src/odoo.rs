@@ -28,6 +28,14 @@ pub struct Odoo {
 }
 
 impl Odoo {
+    pub fn get_databases(&self) -> Result<Vec<String>, Error> {
+        let request = Request::new("db", Some("list"), ((),));
+        let response: Response<Vec<String>> = self
+            .send(&request, None)
+            .map_err(|e| Error(e.to_string()))?;
+        Ok(response.result)
+    }
+
     pub fn new(host: &str, database: &str) -> Odoo {
         Odoo {
             host: host.to_string(),
@@ -194,6 +202,14 @@ mod tests {
     fn test_login() {
         let odoo = get_odoo();
         assert_ne!(odoo.uid.unwrap(), 0);
+    }
+
+    #[test]
+    fn test_list_db() {
+        let odoo = Odoo::new("http://localhost:8069", "");
+        let databases = odoo.get_databases().unwrap();
+        assert_ne!(databases.len(), 0);
+        assert_ne!(databases[0].len(), 0);
     }
 
     #[test]
