@@ -176,8 +176,21 @@ mod tests {
     use crate::odoo::{deserialize_odoo_nullable, Odoo};
 
     fn get_odoo() -> Odoo {
-        let odoo = Odoo::new("https://demo.odoo.com", "");
-        let values = odoo.start().unwrap();
+        let host = std::env::var("ODOO_HOST");
+        let database = std::env::var("ODOO_DATABASE");
+        let user = std::env::var("ODOO_USER");
+        let password = std::env::var("ODOO_PASSWORD");
+        let values = if host.is_ok() {
+            let mut values = HashMap::new();
+            values.insert("host".to_string(), host.unwrap());
+            values.insert("database".to_string(), database.unwrap());
+            values.insert("user".to_string(), user.unwrap());
+            values.insert("password".to_string(), password.unwrap());
+            values
+        } else {
+            let odoo = Odoo::new("https://demo.odoo.com", "");
+            odoo.start().unwrap()
+        };
         Odoo::new_and_login(
             values.get("host").unwrap(),
             values.get("database").unwrap(),
@@ -189,13 +202,15 @@ mod tests {
 
     #[test]
     fn test_start() {
-        let odoo = Odoo::new("https://demo.odoo.com", "");
-        let values = odoo.start().unwrap();
-        assert_eq!(values.is_empty(), false);
-        assert_eq!(values.contains_key("host"), true);
-        assert_eq!(values.contains_key("database"), true);
-        assert_eq!(values.contains_key("user"), true);
-        assert_eq!(values.contains_key("password"), true);
+        if std::env::var("ODOO_HOST").is_err() {
+            let odoo = Odoo::new("https://demo.odoo.com", "");
+            let values = odoo.start().unwrap();
+            assert_eq!(values.is_empty(), false);
+            assert_eq!(values.contains_key("host"), true);
+            assert_eq!(values.contains_key("database"), true);
+            assert_eq!(values.contains_key("user"), true);
+            assert_eq!(values.contains_key("password"), true);
+        }
     }
 
     #[test]
@@ -298,7 +313,7 @@ mod tests {
         let odoo = get_odoo();
 
         let partners: Response<Vec<Partner>> = odoo
-            .search_read("res.partner", (("id", ">", 2),), None, Some(5), None)
+            .search_read("res.partner", (("id", ">", 2), ("name", "!=", false)), None, Some(5), None)
             .unwrap();
         let partners = partners.result;
         assert_eq!(partners.len(), 5);
