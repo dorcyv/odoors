@@ -18,18 +18,29 @@ fn get_odoo() -> Odoo {
         values.get("database").unwrap(),
         values.get("user").unwrap(),
         values.get("password").unwrap(),
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 fn main() {
     let odoo = get_odoo();
-    let product_template: Vec<ProductTemplate> = odoo.search_read("product.template",
-                                                                  (),
-                                                                  Some(vec!["name", "default_code"]),
-                                                                  None, None,
-    ).unwrap().result;
+    let product_template: Vec<ProductTemplate> = odoo
+        .search_read(
+            "product.template",
+            (),
+            Some(vec!["name", "default_code"]),
+            None,
+            None,
+        )
+        .unwrap()
+        .result;
 
     for product in product_template.iter() {
-        println!("[{}] {}", product.default_code.as_ref().unwrap_or(&String::from("")), product.name);
+        println!(
+            "{}: [{}] {}",
+            product.id,
+            product.default_code.as_ref().unwrap_or(&String::from("")),
+            product.name
+        );
     }
 }
